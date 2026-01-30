@@ -1,41 +1,21 @@
-# Withings Sync Home Assistant Addon
-
-[![License](https://img.shields.io/github/license/mcinteerj/withings-sync-ha-addon)](LICENSE)
+# Withings Sync Home Assistant Addon Repository
 
 Home Assistant addon that syncs Withings weight/body composition data to Garmin Connect.
 
-## Features
-
-- Syncs weight, body fat %, muscle mass, bone mass, hydration
-- Uses [withings-sync](https://github.com/jaroslawhartman/withings-sync) under the hood
-- Runs on-demand (no background process)
-- Persistent OAuth tokens (one-time setup)
-- Garmin session caching (fewer logins)
-
 ## Installation
 
-### As Local Addon
+1. Add this repository to Home Assistant:
+   - Go to **Settings → Add-ons → Add-on Store**
+   - Click **⋮ (top right) → Repositories**
+   - Add: `https://github.com/mcinteerj/withings-sync-ha-addon`
+2. Find **Withings Sync** in the addon store
+3. Install and configure
 
-1. Copy this repository to `/config/addons/withings_sync/` on your HA instance
-2. Go to **Settings → Add-ons → Add-on Store**
-3. Click **⋮ → Check for updates** (top right)
-4. Find "Withings Sync" under **Local add-ons**
-5. Install and configure
+## Addons
 
-### From Repository (coming soon)
-
-Add repository URL to HA addon store.
-
-## Configuration
-
-| Option | Required | Description |
-|--------|----------|-------------|
-| `garmin_username` | Yes | Garmin Connect email |
-| `garmin_password` | Yes | Garmin Connect password |
-
-## Usage
-
-See [DOCS.md](DOCS.md) for setup and automation examples.
+| Addon | Description |
+|-------|-------------|
+| [Withings Sync](./withings_sync/) | Sync weight data from Withings to Garmin Connect |
 
 ## Credits
 
