@@ -122,6 +122,12 @@ def run_sync():
     return True, "Sync started"
 
 
+@app.route("/_status")
+def health():
+    """Health check for ingress."""
+    return "", 200
+
+
 @app.route("/")
 def index():
     """Main page."""
