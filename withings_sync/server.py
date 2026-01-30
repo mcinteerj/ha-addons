@@ -6,25 +6,15 @@ import os
 import subprocess
 import threading
 from pathlib import Path
-from flask import Flask, render_template, request, jsonify, abort
+from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__, template_folder='/templates')
 
 # Use /data/ for persistent storage (add-on private directory)
 DATA_DIR = Path("/data")
-OPTIONS_FILE = DATA_DIR / "options.json"
 WITHINGS_USER_FILE = DATA_DIR / ".withings_user.json"
+GARMIN_CREDS_FILE = DATA_DIR / ".garmin_creds.json"
 GARMIN_SESSION_DIR = DATA_DIR / ".garmin_session"
-
-# Ingress proxy IP - only accept connections from HA
-INGRESS_PROXY_IP = "172.30.32.2"
-
-
-@app.before_request
-def check_ingress():
-    """Only allow connections from Home Assistant ingress proxy."""
-    if request.remote_addr != INGRESS_PROXY_IP:
-        abort(403)
 
 # Withings OAuth settings (from withings-sync project)
 WITHINGS_CLIENT_ID = "183e03e1f363110b3551f96765c98c10e8f1aa647a37067a1cb64bbbaf491626"
@@ -43,12 +33,24 @@ sync_log = []
 sync_running = False
 
 
-def get_options():
-    """Read addon options."""
-    if OPTIONS_FILE.exists():
-        with open(OPTIONS_FILE) as f:
-            return json.load(f)
+def get_garmin_creds():
+    """Read Garmin credentials from data file."""
+    if GARMIN_CREDS_FILE.exists():
+        try:
+            with open(GARMIN_CREDS_FILE) as f:
+                return json.load(f)
+        except Exception:
+            pass
     return {}
+
+
+def save_garmin_creds(email, password):
+    """Save Garmin credentials to data file."""
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    with open(GARMIN_CREDS_FILE, "w") as f:
+        json.dump({"email": email, "password": password}, f)
+    # Set restrictive permissions
+    GARMIN_CREDS_FILE.chmod(0o600)
 
 
 def is_withings_authenticated():
@@ -59,13 +61,15 @@ def is_withings_authenticated():
         with open(WITHINGS_USER_FILE) as f:
             data = json.load(f)
             return "access_token" in data and "refresh_token" in data
-    except:
+    except Exception:
         return False
 
 
 def is_garmin_authenticated():
-    """Check if Garmin session exists."""
-    return GARMIN_SESSION_DIR.exists() and any(GARMIN_SESSION_DIR.iterdir())
+    """Check if Garmin credentials exist or session is cached."""
+    has_creds = GARMIN_CREDS_FILE.exists()
+    has_session = GARMIN_SESSION_DIR.exists() and any(GARMIN_SESSION_DIR.iterdir())
+    return has_creds or has_session
 
 
 def save_withings_auth_code(code):
@@ -89,9 +93,9 @@ def run_sync():
     def _sync():
         global sync_running, sync_log
         try:
-            options = get_options()
-            garmin_user = options.get("garmin_username", "")
-            garmin_pass = options.get("garmin_password", "")
+            garmin_creds = get_garmin_creds()
+            garmin_user = garmin_creds.get("email", "")
+            garmin_pass = garmin_creds.get("password", "")
             
             env = os.environ.copy()
             env["HOME"] = str(DATA_DIR)
@@ -103,6 +107,8 @@ def run_sync():
                 cmd.extend(["--garmin-username", garmin_user])
             if garmin_pass:
                 cmd.extend(["--garmin-password", garmin_pass])
+            
+            sync_log.append(f"Running: withings-sync")
             
             process = subprocess.Popen(
                 cmd,
@@ -147,8 +153,23 @@ def index():
         withings_auth_url=WITHINGS_AUTH_URL,
         withings_authenticated=is_withings_authenticated(),
         garmin_authenticated=is_garmin_authenticated(),
-        garmin_username=get_options().get("garmin_username", ""),
     )
+
+
+@app.route("/garmin", methods=["POST"])
+def save_garmin():
+    """Save Garmin credentials."""
+    email = request.form.get("email", "").strip()
+    password = request.form.get("password", "").strip()
+    
+    if not email or not password:
+        return jsonify({"success": False, "error": "Email and password required"})
+    
+    try:
+        save_garmin_creds(email, password)
+        return jsonify({"success": True, "message": "Garmin credentials saved"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
 
 
 @app.route("/authorize", methods=["POST"])
@@ -186,6 +207,8 @@ def clear():
     try:
         if WITHINGS_USER_FILE.exists():
             WITHINGS_USER_FILE.unlink()
+        if GARMIN_CREDS_FILE.exists():
+            GARMIN_CREDS_FILE.unlink()
         if GARMIN_SESSION_DIR.exists():
             import shutil
             shutil.rmtree(GARMIN_SESSION_DIR)

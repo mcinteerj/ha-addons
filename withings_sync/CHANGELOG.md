@@ -3,13 +3,17 @@
 ## [1.2.0] - 2025-01-30
 
 ### Changed
-- **Breaking**: Moved credential storage from `/config/.withings_sync_data/` to `/data/`
+- **Breaking**: Moved all credential storage from `/config/` to `/data/`
   - You will need to re-authenticate after updating
-- Updated run.sh to use bashio
-- Removed deprecated `map` config (no longer writes to HA config directory)
+- **Breaking**: Garmin credentials now entered via Web UI instead of addon config
+  - Removed `garmin_username` and `garmin_password` from addon options
+  - More consistent UX - both services configured in same place
+- Light theme aligned with Home Assistant design language
+- Fixed ingress routing (404 on authorize/sync endpoints)
 
 ### Security
-- Added ingress IP restriction (only accepts connections from HA proxy)
+- Garmin credentials file has restrictive permissions (600)
+- Removed deprecated config map
 
 ## [1.1.1] - 2025-01-30
 
