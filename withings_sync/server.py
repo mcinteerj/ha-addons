@@ -148,8 +148,11 @@ def health():
 @app.route("/")
 def index():
     """Main page."""
+    # Get ingress path from header for proper URL resolution
+    ingress_path = request.headers.get("X-Ingress-Path", "")
     return render_template(
         "index.html",
+        ingress_path=ingress_path,
         withings_auth_url=WITHINGS_AUTH_URL,
         withings_authenticated=is_withings_authenticated(),
         garmin_authenticated=is_garmin_authenticated(),
