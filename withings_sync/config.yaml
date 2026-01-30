@@ -1,5 +1,5 @@
 name: "Withings Sync"
-version: "1.4.1"
+version: "1.5.0"
 slug: withings_sync
 description: "Sync Withings weight data to Garmin Connect"
 url: "https://github.com/mcinteerj/ha-addons"

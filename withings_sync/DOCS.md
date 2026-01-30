@@ -32,22 +32,16 @@ Open the Web UI and click **"Sync Now"**.
 
 ### Automated Sync
 
-Once both services are connected, an **Automation** section appears in the Web UI with your API token.
-
-**1. Copy your API token** from the Web UI.
-
-**2. Add to `configuration.yaml`:**
+Add to `configuration.yaml`:
 
 ```yaml
 rest_command:
   withings_sync:
     url: "http://homeassistant.local:8099/sync"
     method: POST
-    headers:
-      Authorization: "Bearer YOUR_TOKEN_HERE"
 ```
 
-**3. Create an automation:**
+Then create an automation:
 
 ```yaml
 automation:
@@ -79,16 +73,12 @@ If tokens expire, open the Web UI and click **"Clear All Credentials"**, then se
 ### Check Logs
 View sync history in the Web UI or in the addon **Log** tab.
 
-### API Returns 401
-Ensure your `rest_command` has the correct `Authorization: Bearer <token>` header.
-
 ## Data Storage
 
 Credentials are stored securely in the addon's private data directory:
 - `.withings_user.json` - Withings OAuth tokens
 - `.garmin_creds.json` - Garmin credentials (permissions: 600)
 - `.garmin_session/` - Garmin session cache
-- `.api_token` - API token for automations (permissions: 600)
 
 ## Notes
 

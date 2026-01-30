@@ -270,18 +270,6 @@
         <div id="log-container" class="log-container"></div>
     </div>
 
-    {% if withings_authenticated and garmin_authenticated %}
-    <div class="card">
-        <h2>Automation</h2>
-        <p style="margin-bottom: 12px;">API token for use in Home Assistant automations:</p>
-        <div style="display: flex; gap: 8px;">
-            <input type="text" id="api-token" readonly style="flex: 1; font-family: monospace; margin-bottom: 0;">
-            <button id="copy-token-btn" class="btn btn-primary" style="white-space: nowrap;">Copy</button>
-        </div>
-        <p class="text-muted">See addon documentation for rest_command setup</p>
-    </div>
-    {% endif %}
-
     <div class="card">
         <h2>Maintenance</h2>
         <button id="clear-btn" class="btn btn-outline">Clear All Credentials</button>
@@ -388,24 +376,6 @@
             }
         });
 
-        // API Token handling
-        const tokenInput = document.getElementById('api-token');
-        const copyBtn = document.getElementById('copy-token-btn');
-        
-        if (tokenInput) {
-            fetch(api('api-token')).then(r => r.json()).then(data => {
-                if (data.token) {
-                    tokenInput.value = data.token;
-                }
-            });
-            
-            copyBtn.addEventListener('click', () => {
-                tokenInput.select();
-                navigator.clipboard.writeText(tokenInput.value);
-                copyBtn.textContent = 'Copied!';
-                setTimeout(() => copyBtn.textContent = 'Copy', 2000);
-            });
-        }
     </script>
 </body>
 </html>
