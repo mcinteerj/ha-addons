@@ -336,7 +336,7 @@
             syncBtn.disabled = true;
             syncBtn.textContent = 'Syncing...';
             
-            await fetch(api('sync'), { method: 'POST' });
+            await fetch(api('sync') + '?async=1', { method: 'POST' });
             pollStatus();
         });
 

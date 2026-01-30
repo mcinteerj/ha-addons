@@ -81,15 +81,16 @@ def save_withings_auth_code(code):
         json.dump(data, f, indent=2)
 
 
-def run_sync():
-    """Run withings-sync in background."""
+def run_sync(wait=False):
+    """Run withings-sync. If wait=True, block until complete and return result."""
     global sync_running, sync_log
     
     if sync_running:
-        return False, "Sync already running"
+        return False, "Sync already running", None
     
     sync_running = True
     sync_log = []
+    result = {"success": False, "output": []}
     
     def _sync():
         global sync_running, sync_log
@@ -109,7 +110,7 @@ def run_sync():
             if garmin_pass:
                 cmd.extend(["--garmin-password", garmin_pass])
             
-            sync_log.append(f"Running: withings-sync")
+            sync_log.append("Running: withings-sync")
             
             process = subprocess.Popen(
                 cmd,
@@ -127,17 +128,27 @@ def run_sync():
             
             if process.returncode == 0:
                 sync_log.append("✓ Sync completed successfully!")
+                result["success"] = True
             else:
                 sync_log.append(f"✗ Sync failed with code {process.returncode}")
+                result["success"] = False
+            
+            result["output"] = sync_log.copy()
                 
         except Exception as e:
             sync_log.append(f"✗ Error: {str(e)}")
+            result["success"] = False
+            result["output"] = sync_log.copy()
         finally:
             sync_running = False
     
-    thread = threading.Thread(target=_sync)
-    thread.start()
-    return True, "Sync started"
+    if wait:
+        _sync()
+        return result["success"], "Sync completed" if result["success"] else "Sync failed", result["output"]
+    else:
+        thread = threading.Thread(target=_sync)
+        thread.start()
+        return True, "Sync started", None
 
 
 @app.route("/_status")
@@ -189,9 +200,14 @@ def authorize():
 
 @app.route("/sync", methods=["POST"])
 def sync():
-    """Trigger sync."""
-    success, message = run_sync()
-    return jsonify({"success": success, "message": message})
+    """Trigger sync. Add ?async=1 to return immediately (for web UI)."""
+    is_async = request.args.get("async") == "1"
+    success, message, output = run_sync(wait=not is_async)
+    
+    response = {"success": success, "message": message}
+    if output:
+        response["output"] = output
+    return jsonify(response)
 
 
 @app.route("/status")
