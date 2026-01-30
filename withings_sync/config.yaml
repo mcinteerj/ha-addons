@@ -1,5 +1,5 @@
 name: "Withings Sync"
-version: "1.2.3"
+version: "1.4.0"
 slug: withings_sync
 description: "Sync Withings weight data to Garmin Connect"
 url: "https://github.com/mcinteerj/ha-addons"
@@ -16,4 +16,4 @@ panel_icon: mdi:scale-bathroom
 ports:
   8099/tcp: 8099
 ports_description:
-  8099/tcp: "Sync API"
+  8099/tcp: "Sync API for automations"

@@ -15,6 +15,33 @@ DATA_DIR = Path("/data")
 WITHINGS_USER_FILE = DATA_DIR / ".withings_user.json"
 GARMIN_CREDS_FILE = DATA_DIR / ".garmin_creds.json"
 GARMIN_SESSION_DIR = DATA_DIR / ".garmin_session"
+API_TOKEN_FILE = DATA_DIR / ".api_token"
+
+
+def get_or_create_token():
+    """Get existing API token or create a new one."""
+    if API_TOKEN_FILE.exists():
+        return API_TOKEN_FILE.read_text().strip()
+    import secrets
+    token = secrets.token_urlsafe(32)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    API_TOKEN_FILE.write_text(token)
+    API_TOKEN_FILE.chmod(0o600)
+    print(f"[INFO] API token created: {token}")
+    print("[INFO] Use this token in your rest_command Authorization header")
+    return token
+
+
+def is_authorized():
+    """Check if request is from ingress or has valid token."""
+    # Ingress requests are pre-authenticated by HA
+    if request.headers.get("X-Ingress-Path"):
+        return True
+    # External requests need Bearer token
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        return auth[7:] == get_or_create_token()
+    return False
 
 # Withings OAuth settings (from withings-sync project)
 WITHINGS_CLIENT_ID = "183e03e1f363110b3551f96765c98c10e8f1aa647a37067a1cb64bbbaf491626"
@@ -188,9 +215,19 @@ def authorize():
 
 @app.route("/sync", methods=["POST"])
 def sync():
-    """Trigger sync."""
+    """Trigger sync (requires auth for external requests)."""
+    if not is_authorized():
+        return jsonify({"success": False, "error": "Unauthorized - Bearer token required"}), 401
     success, message = run_sync()
     return jsonify({"success": success, "message": message})
+
+
+@app.route("/api-token")
+def api_token():
+    """Get API token for automations (ingress only)."""
+    if not request.headers.get("X-Ingress-Path"):
+        return jsonify({"error": "Only accessible via Web UI"}), 403
+    return jsonify({"token": get_or_create_token()})
 
 
 @app.route("/status")
