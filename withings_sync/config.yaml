@@ -1,15 +1,15 @@
 name: "Withings Sync"
-version: "1.0.0"
+version: "1.0.1"
 slug: withings_sync
 description: "Sync Withings weight data to Garmin Connect"
-url: "https://github.com/mcinteerj/withings-sync-ha-addon"
+url: "https://github.com/mcinteerj/ha-addons"
 arch:
   - amd64
   - aarch64
   - armv7
+init: false
 startup: once
 boot: manual
-stdin: true
 map:
   - config:rw
 options:
