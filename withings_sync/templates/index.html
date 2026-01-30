@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withings Sync</title>
+    <style>
+        :root {
+            --primary: #03a9f4;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --error: #f44336;
+            --bg: #1c1c1c;
+            --card-bg: #2d2d2d;
+            --text: #e0e0e0;
+            --text-muted: #888;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 { 
+            font-size: 1.5rem; 
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .card h2 {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .status-dot.success { background: var(--success); }
+        .status-dot.warning { background: var(--warning); }
+        .status-dot.error { background: var(--error); }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-warning { background: var(--warning); color: black; }
+        .btn-error { background: var(--error); color: white; }
+        .btn-block { display: block; width: 100%; text-align: center; }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background: #1c1c1c;
+            color: var(--text);
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+        input[type="text"]::placeholder { color: var(--text-muted); }
+        .log-container {
+            background: #1c1c1c;
+            border-radius: 8px;
+            padding: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .log-container:empty::before {
+            content: "No sync logs yet...";
+            color: var(--text-muted);
+        }
+        .steps { counter-reset: step; }
+        .step {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .step::before {
+            counter-increment: step;
+            content: counter(step);
+            background: var(--primary);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .step.done::before { background: var(--success); content: "✓"; }
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: none;
+        }
+        .message.success { background: rgba(76, 175, 80, 0.2); border: 1px solid var(--success); display: block; }
+        .message.error { background: rgba(244, 67, 54, 0.2); border: 1px solid var(--error); display: block; }
+        .mt-12 { margin-top: 12px; }
+        .text-muted { color: var(--text-muted); font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <h1>⚖️ Withings Sync</h1>
+
+    <div class="card">
+        <h2>Status</h2>
+        <div class="status">
+            <span class="status-dot {{ 'success' if withings_authenticated else 'warning' }}"></span>
+            <span>Withings: {{ 'Connected' if withings_authenticated else 'Not connected' }}</span>
+        </div>
+        <div class="status">
+            <span class="status-dot {{ 'success' if garmin_authenticated else 'warning' }}"></span>
+            <span>Garmin: {{ 'Connected' if garmin_authenticated else 'Not connected' }}{% if garmin_username %} ({{ garmin_username }}){% endif %}</span>
+        </div>
+    </div>
+
+    {% if not withings_authenticated %}
+    <div class="card">
+        <h2>Setup Withings</h2>
+        <div id="auth-message" class="message"></div>
+        <div class="steps">
+            <div class="step">
+                <div>
+                    <p>Click below to authorize with Withings</p>
+                    <a href="{{ withings_auth_url }}" target="_blank" class="btn btn-primary mt-12">
+                        Authorize Withings →
+                    </a>
+                </div>
+            </div>
+            <div class="step">
+                <div style="flex: 1;">
+                    <p>Paste the code from the callback page</p>
+                    <form id="auth-form" class="mt-12">
+                        <input type="text" name="code" placeholder="Paste authorization code here..." required>
+                        <button type="submit" class="btn btn-success btn-block">Save Code</button>
+                    </form>
+                </div>
+            </div>
+            <div class="step">
+                <div>
+                    <p>Click "Sync Now" below to complete authentication</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <h2>Sync</h2>
+        <button id="sync-btn" class="btn btn-primary btn-block" {% if not withings_authenticated %}disabled{% endif %}>
+            Sync Now
+        </button>
+        <p class="text-muted mt-12">
+            {% if not withings_authenticated %}
+            Complete Withings setup first
+            {% else %}
+            Syncs today's weight data to Garmin Connect
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="card">
+        <h2>Sync Log</h2>
+        <div id="log-container" class="log-container"></div>
+    </div>
+
+    <div class="card">
+        <h2>Maintenance</h2>
+        <button id="clear-btn" class="btn btn-error">Clear All Credentials</button>
+        <p class="text-muted mt-12">Use this if you need to re-authenticate</p>
+    </div>
+
+    <script>
+        const authForm = document.getElementById('auth-form');
+        const authMessage = document.getElementById('auth-message');
+        const syncBtn = document.getElementById('sync-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const logContainer = document.getElementById('log-container');
+
+        if (authForm) {
+            authForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const code = authForm.querySelector('input[name="code"]').value;
+                
+                const res = await fetch('/authorize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `code=${encodeURIComponent(code)}`
+                });
+                const data = await res.json();
+                
+                authMessage.className = 'message ' + (data.success ? 'success' : 'error');
+                authMessage.textContent = data.message || data.error;
+                
+                if (data.success) {
+                    syncBtn.disabled = false;
+                }
+            });
+        }
+
+        syncBtn.addEventListener('click', async () => {
+            syncBtn.disabled = true;
+            syncBtn.textContent = 'Syncing...';
+            
+            await fetch('/sync', { method: 'POST' });
+            
+            // Poll for status
+            pollStatus();
+        });
+
+        clearBtn.addEventListener('click', async () => {
+            if (!confirm('Clear all stored credentials? You will need to re-authenticate.')) return;
+            
+            const res = await fetch('/clear', { method: 'POST' });
+            const data = await res.json();
+            
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+
+        async function pollStatus() {
+            const res = await fetch('/status');
+            const data = await res.json();
+            
+            logContainer.textContent = data.sync_log.join('\n');
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            if (data.sync_running) {
+                setTimeout(pollStatus, 1000);
+            } else {
+                syncBtn.disabled = false;
+                syncBtn.textContent = 'Sync Now';
+                // Reload to update auth status
+                setTimeout(() => location.reload(), 1500);
+            }
+        }
+
+        // Initial status poll
+        fetch('/status').then(r => r.json()).then(data => {
+            if (data.sync_log.length > 0) {
+                logContainer.textContent = data.sync_log.join('\n');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -6,62 +6,72 @@ Syncs weight and body composition data from Withings scales to Garmin Connect.
 
 ### 1. Configure Garmin Credentials
 
-In the addon configuration, set:
+In the addon **Configuration** tab, set:
 - `garmin_username`: Your Garmin Connect email
 - `garmin_password`: Your Garmin Connect password
 
-### 2. Authenticate with Withings
+### 2. Start the Addon
 
-On first run, the addon will prompt for Withings OAuth authentication:
+Click **Start**. The addon will run continuously to serve the web UI.
 
-1. Start the addon
-2. Check the addon logs
-3. Open the URL shown in a browser
-4. Authorize the app on Withings website
-5. Copy the token from the callback page
-6. Paste it into the addon logs (stdin)
+### 3. Authenticate with Withings
 
-This is a one-time setup. Tokens are stored in `/config/.withings_sync_data/`.
+1. Open the addon **Web UI** (click "OPEN WEB UI" button)
+2. Click **"Authorize Withings"** - opens Withings login in new tab
+3. Log in and authorize the app
+4. You'll be redirected to a page showing your authorization code
+5. Copy the code and paste it into the addon web UI
+6. Click **"Save Code"**
+7. Click **"Sync Now"** to complete authentication and sync
 
-### 3. Trigger Sync
+## Usage
 
-**From Automation:**
-```yaml
-service: hassio.addon_start
-data:
-  addon: local_withings_sync
-```
+### Manual Sync
 
-**Manual:** Click "Start" in the addon UI.
+Open the Web UI and click **"Sync Now"**.
 
-## Automation Example
+### Automated Sync
 
-Sync when weight sensor updates:
+Create an automation to trigger sync when weight updates:
+
 ```yaml
 automation:
   - alias: "Sync Withings to Garmin"
     trigger:
       - platform: state
-        entity_id: sensor.withings_weight
+        entity_id: sensor.withings_weight_kg
     action:
-      - service: hassio.addon_start
+      - service: hassio.addon_stdin
         data:
           addon: local_withings_sync
+          input: sync
+```
+
+Or on a schedule:
+
+```yaml
+automation:
+  - alias: "Daily Withings Sync"
+    trigger:
+      - platform: time
+        at: "07:00:00"
+    action:
+      - service: hassio.addon_stdin
+        data:
+          addon: local_withings_sync
+          input: sync
 ```
 
 ## Troubleshooting
 
-### Token Expired
-Delete `/config/.withings_sync_data/.withings_user.json` and re-run the addon for fresh OAuth.
+### Re-authenticate
+If tokens expire, open the Web UI and click **"Clear All Credentials"**, then re-authenticate.
 
-### Garmin Session Expired  
-Delete `/config/.withings_sync_data/.garmin_session/` folder. The addon will re-authenticate using your configured password.
+### Check Logs
+View sync history in the Web UI or in the addon **Log** tab.
 
 ## Data Storage
 
-All credentials and tokens stored in:
-```
-/config/.withings_sync_data/
-├── .withings_user.json   # Withings OAuth tokens
-└── .garmin_session/      # Garmin session cache
-```
+Credentials stored in `/config/.withings_sync_data/`:
+- `.withings_user.json` - Withings OAuth tokens
+- `.garmin_session/` - Garmin session cache
