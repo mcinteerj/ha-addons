@@ -6,14 +6,25 @@ import os
 import subprocess
 import threading
 from pathlib import Path
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, abort
 
 app = Flask(__name__, template_folder='/templates')
 
-CONFIG_DIR = Path("/config/.withings_sync_data")
-OPTIONS_FILE = Path("/data/options.json")
-WITHINGS_USER_FILE = CONFIG_DIR / ".withings_user.json"
-GARMIN_SESSION_DIR = CONFIG_DIR / ".garmin_session"
+# Use /data/ for persistent storage (add-on private directory)
+DATA_DIR = Path("/data")
+OPTIONS_FILE = DATA_DIR / "options.json"
+WITHINGS_USER_FILE = DATA_DIR / ".withings_user.json"
+GARMIN_SESSION_DIR = DATA_DIR / ".garmin_session"
+
+# Ingress proxy IP - only accept connections from HA
+INGRESS_PROXY_IP = "172.30.32.2"
+
+
+@app.before_request
+def check_ingress():
+    """Only allow connections from Home Assistant ingress proxy."""
+    if request.remote_addr != INGRESS_PROXY_IP:
+        abort(403)
 
 # Withings OAuth settings (from withings-sync project)
 WITHINGS_CLIENT_ID = "183e03e1f363110b3551f96765c98c10e8f1aa647a37067a1cb64bbbaf491626"
@@ -59,7 +70,7 @@ def is_garmin_authenticated():
 
 def save_withings_auth_code(code):
     """Save Withings auth code to config file."""
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
     data = {"authentification_code": code}
     with open(WITHINGS_USER_FILE, "w") as f:
         json.dump(data, f, indent=2)
@@ -83,7 +94,7 @@ def run_sync():
             garmin_pass = options.get("garmin_password", "")
             
             env = os.environ.copy()
-            env["HOME"] = str(CONFIG_DIR)
+            env["HOME"] = str(DATA_DIR)
             env["WITHINGS_USER"] = str(WITHINGS_USER_FILE)
             env["GARMIN_SESSION"] = str(GARMIN_SESSION_DIR)
             
@@ -184,5 +195,5 @@ def clear():
 
 
 if __name__ == "__main__":
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
     app.run(host="0.0.0.0", port=8099)

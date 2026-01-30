@@ -26,41 +26,7 @@ Click **Start**. The addon will run continuously to serve the web UI.
 
 ## Usage
 
-### Manual Sync
-
-Open the Web UI and click **"Sync Now"**.
-
-### Automated Sync
-
-Create an automation to trigger sync when weight updates:
-
-```yaml
-automation:
-  - alias: "Sync Withings to Garmin"
-    trigger:
-      - platform: state
-        entity_id: sensor.withings_weight_kg
-    action:
-      - service: hassio.addon_stdin
-        data:
-          addon: local_withings_sync
-          input: sync
-```
-
-Or on a schedule:
-
-```yaml
-automation:
-  - alias: "Daily Withings Sync"
-    trigger:
-      - platform: time
-        at: "07:00:00"
-    action:
-      - service: hassio.addon_stdin
-        data:
-          addon: local_withings_sync
-          input: sync
-```
+Open the Web UI and click **"Sync Now"** to sync your latest Withings data to Garmin Connect.
 
 ## Troubleshooting
 
@@ -72,6 +38,11 @@ View sync history in the Web UI or in the addon **Log** tab.
 
 ## Data Storage
 
-Credentials stored in `/config/.withings_sync_data/`:
+Credentials are stored securely in the addon's private data directory (`/data/`):
 - `.withings_user.json` - Withings OAuth tokens
 - `.garmin_session/` - Garmin session cache
+
+## Notes
+
+- This addon uses the [withings-sync](https://github.com/jaroslawhartman/withings-sync) project
+- Withings OAuth callback is handled via the withings-sync project's GitHub Pages

@@ -1,21 +1,24 @@
 # Changelog
 
-## [1.1.0] - 2026-01-30
-
-### Added
-- Web UI via Home Assistant ingress
-- Guided OAuth flow for Withings authentication
-- Sync status and log viewer
-- "Clear Credentials" maintenance option
+## [1.2.0] - 2025-01-30
 
 ### Changed
-- Addon now runs as a service (always on for web UI)
-- Authentication via web UI instead of config fields
+- **Breaking**: Moved credential storage from `/config/.withings_sync_data/` to `/data/`
+  - You will need to re-authenticate after updating
+- Updated run.sh to use bashio
+- Removed deprecated `map` config (no longer writes to HA config directory)
 
-## [1.0.0] - 2026-01-30
+### Security
+- Added ingress IP restriction (only accepts connections from HA proxy)
+
+## [1.1.1] - 2025-01-30
+
+### Fixed
+- Initial release with ingress support
+
+## [1.0.0] - 2025-01-30
 
 ### Added
-- Initial release
-- Withings OAuth flow
-- Garmin Connect sync
-- Session caching for both services
+- Initial addon structure
+- Flask web UI for OAuth flow
+- Withings to Garmin sync via withings-sync CLI

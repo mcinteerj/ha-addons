@@ -1,11 +1,8 @@
-#!/bin/bash
+#!/usr/bin/with-contenv bashio
 set -e
 
-CONFIG_DIR="/config/.withings_sync_data"
-mkdir -p "$CONFIG_DIR"
-
-echo "[INFO] Starting Withings Sync addon..."
-echo "[INFO] Config directory: $CONFIG_DIR"
+bashio::log.info "Starting Withings Sync addon..."
+bashio::log.info "Data directory: /data"
 
 # Start the web server
 exec python3 /server.py
