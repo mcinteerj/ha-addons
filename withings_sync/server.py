@@ -33,9 +33,13 @@ def get_or_create_token():
 
 
 def is_authorized():
-    """Check if request is from ingress or has valid token."""
+    """Check if request is from ingress, internal network, or has valid token."""
     # Ingress requests are pre-authenticated by HA
     if request.headers.get("X-Ingress-Path"):
+        return True
+    # Internal HA network (supervisor, core, other addons) - trusted
+    remote_ip = request.remote_addr or ""
+    if remote_ip.startswith("172.30."):
         return True
     # External requests need Bearer token
     auth = request.headers.get("Authorization", "")
