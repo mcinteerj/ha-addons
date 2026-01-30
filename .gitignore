@@ -1,0 +1,8 @@
+# Local dev
+.vscode/
+*.pyc
+__pycache__/
+
+# Secrets
+*.json
+.garmin_session/

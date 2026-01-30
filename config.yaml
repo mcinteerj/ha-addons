@@ -1,0 +1,20 @@
+name: "Withings Sync"
+version: "1.0.0"
+slug: withings_sync
+description: "Sync Withings weight data to Garmin Connect"
+url: "https://github.com/mcinteerj/withings-sync-ha-addon"
+arch:
+  - amd64
+  - aarch64
+  - armv7
+startup: once
+boot: manual
+stdin: true
+map:
+  - config:rw
+options:
+  garmin_username: ""
+  garmin_password: ""
+schema:
+  garmin_username: str
+  garmin_password: password
