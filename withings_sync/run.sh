@@ -1,6 +1,8 @@
-#!/usr/bin/with-contenv bashio
-
+#!/bin/bash
 set -e
+
+# Source bashio library
+source /usr/lib/bashio/bashio.sh
 
 CONFIG_DIR="/config/.withings_sync_data"
 GARMIN_USER=$(bashio::config 'garmin_username')
